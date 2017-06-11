@@ -1,0 +1,56 @@
+apply plugin: "java"
+
+def signFile = "../.gradle/sign.gradle"
+if (file(signFile).exists()) {
+    apply from: signFile
+}
+
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
+
+group = "io.github.lxgaming.httpspec"
+archivesBaseName = "HttpSpec"
+version = "0.1.0"
+
+configurations {
+    provided {
+        compile.extendsFrom(provided)
+    }
+
+    build {
+        if (project.tasks.findByName("signJar")) {
+            return finalizedBy(signJar)
+        }
+
+        return doLast {
+            println("========== [WARNING] ==========")
+            println()
+            println("   This build is not signed!   ")
+            println()
+            println("========== [WARNING] ==========")
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+}
+
+jar {
+    from {
+        (configurations.compile - configurations.provided).collect {
+            if (it.isDirectory()) {
+                return it
+            }
+            return zipTree(it)
+        }
+    }
+}
+
+processResources {
+    from("LICENSE")
+    rename("LICENSE", "LICENSE-" + archivesBaseName)
+}
